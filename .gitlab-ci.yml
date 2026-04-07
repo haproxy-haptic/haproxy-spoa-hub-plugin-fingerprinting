@@ -13,9 +13,6 @@ workflow:
 variables:
   RUST_VERSION: "1.86"
   CARGO_INCREMENTAL: "0"
-  # The plugin-api crate is fetched from the haproxy-spoa-hub repo.
-  # CI clones it as a submodule or adjusts the path dependency.
-  SPOA_HUB_REPO: "https://gitlab.com/haproxy-haptic/haproxy-spoa-hub.git"
 
 .rules-code:
   rules:
@@ -25,12 +22,6 @@ variables:
         - Cargo.lock
         - rustfmt.toml
         - .gitlab-ci.yml
-
-.setup-deps:
-  before_script:
-    - git clone --depth 1 "${SPOA_HUB_REPO}" /tmp/haproxy-spoa-hub
-    - |
-      sed -i 's|path = "../haproxy-spoa-hub/crates/plugin-api"|path = "/tmp/haproxy-spoa-hub/crates/plugin-api"|' Cargo.toml
 
 # =============================================================================
 # Check Stage
@@ -58,7 +49,6 @@ clippy:
   tags:
     - saas-linux-large-amd64
   needs: []
-  extends: .setup-deps
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -74,7 +64,6 @@ test:
   tags:
     - saas-linux-large-amd64
   needs: []
-  extends: .setup-deps
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -90,7 +79,6 @@ bench:
   tags:
     - saas-linux-large-amd64
   needs: []
-  extends: .setup-deps
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -115,7 +103,6 @@ build:
   tags:
     - saas-linux-large-amd64
   needs: []
-  extends: .setup-deps
   rules:
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
