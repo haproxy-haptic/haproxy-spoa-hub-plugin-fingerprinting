@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fortio-bench
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: fortio
+          image: bench-fortio:latest
+          imagePullPolicy: Never
+          args:
+            - load
+            - "-json"
+            - "-"
+            - "-c"
+            - "CONCURRENCY_PLACEHOLDER"
+            - "-t"
+            - "30s"
+            - "-qps"
+            - "0"
+            - "-k"
+            - "-labels"
+            - "LABELS_PLACEHOLDER"
+            - "-p"
+            - "50,95,99"
+            - "https://haproxy:443/"
+          resources:
+            requests:
+              cpu: "2"
+              memory: "256Mi"
+            limits:
+              cpu: "4"
+              memory: "1Gi"

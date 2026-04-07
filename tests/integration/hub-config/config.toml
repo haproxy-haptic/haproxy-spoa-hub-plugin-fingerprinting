@@ -1,0 +1,12 @@
+plugin_dir = "/etc/haproxy-spoa-hub/plugins"
+default_timeout_ms = 500
+log_level = "info"
+
+[[listeners]]
+type = "unix"
+address = "/var/run/spoe/hub.sock"
+
+[[plugins]]
+name = "fingerprinting"
+library = "libfingerprinting_plugin.so"
+messages = ["get-fingerprint"]
