@@ -1,0 +1,37 @@
+plugin_dir = "/opt/spoa-plugins"
+default_timeout_ms = 100
+log_level = "info"
+
+[[listeners]]
+type = "unix"
+address = "/var/run/haproxy-spoa-hub.sock"
+
+# JA3N fingerprinting (default: sorted extensions, exclude ext 41)
+[[plugins]]
+name = "fingerprinting"
+library = "libfingerprinting_plugin.so"
+messages = ["get-fingerprint"]
+
+# To customize behavior:
+# [plugins.params]
+# sort_extensions = false        # JA3 instead of JA3N
+# exclude_extensions = []        # include all extensions
+# exclude_extensions = [41, 43]  # exclude multiple extensions
+
+# To get both JA3 and JA3N, register the plugin twice:
+#
+# [[plugins]]
+# name = "ja3"
+# library = "libfingerprinting_plugin.so"
+# messages = ["get-fingerprint"]
+# [plugins.params]
+# sort_extensions = false
+# exclude_extensions = []
+#
+# [[plugins]]
+# name = "ja3n"
+# library = "libfingerprinting_plugin.so"
+# messages = ["get-fingerprint"]
+# [plugins.params]
+# sort_extensions = true
+# exclude_extensions = [41]

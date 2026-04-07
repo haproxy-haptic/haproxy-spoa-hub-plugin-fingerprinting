@@ -1,0 +1,24 @@
+services:
+  hub:
+    build:
+      context: ../../..
+      dockerfile: haproxy-spoa-hub-plugin-fingerprinting/tests/integration/Dockerfile.hub
+    command: ["--config", "/config/config.toml"]
+    volumes:
+      - ./hub-config:/config:z
+      - spoe-sock:/var/run/spoe
+
+  haproxy:
+    image: haproxytech/haproxy-debian:3.0
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro,z
+      - ./haproxy/spoe-fingerprint.conf:/etc/haproxy/spoe-fingerprint.conf:ro,z
+      - ./haproxy/cert.pem:/etc/haproxy/cert.pem:ro,z
+      - spoe-sock:/var/run/spoe
+    ports:
+      - "${HAPROXY_PORT:-8443}:8443"
+    depends_on:
+      - hub
+
+volumes:
+  spoe-sock:

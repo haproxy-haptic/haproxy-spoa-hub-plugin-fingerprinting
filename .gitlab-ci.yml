@@ -1,0 +1,117 @@
+stages:
+  - check
+  - build
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+variables:
+  RUST_VERSION: "1.86"
+  CARGO_INCREMENTAL: "0"
+
+.rules-code:
+  rules:
+    - changes:
+        - "**/*.rs"
+        - Cargo.toml
+        - Cargo.lock
+        - rustfmt.toml
+        - .gitlab-ci.yml
+
+# =============================================================================
+# Check Stage
+# =============================================================================
+
+fmt:
+  stage: check
+  image: rust:${RUST_VERSION}-bookworm
+  tags:
+    - saas-linux-small-amd64
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - !reference [.rules-code, rules]
+  interruptible: true
+  before_script:
+    - rustup component add rustfmt
+  script:
+    - cargo fmt -- --check
+
+clippy:
+  stage: check
+  image: rust:${RUST_VERSION}-bookworm
+  tags:
+    - saas-linux-large-amd64
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - !reference [.rules-code, rules]
+  interruptible: true
+  script:
+    - rustup component add clippy
+    - cargo clippy --workspace -- -D warnings
+
+test:
+  stage: check
+  image: rust:${RUST_VERSION}-bookworm
+  tags:
+    - saas-linux-large-amd64
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - !reference [.rules-code, rules]
+  interruptible: true
+  script:
+    - cargo test --workspace
+
+bench:
+  stage: check
+  image: rust:${RUST_VERSION}-bookworm
+  tags:
+    - saas-linux-large-amd64
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - !reference [.rules-code, rules]
+  interruptible: true
+  script:
+    - cargo bench 2>&1 | tee bench-output.txt
+  artifacts:
+    paths:
+      - bench-output.txt
+      - target/criterion/
+    expire_in: 1 week
+
+# =============================================================================
+# Build Stage
+# =============================================================================
+
+build:
+  stage: build
+  image: rust:${RUST_VERSION}-bookworm
+  tags:
+    - saas-linux-large-amd64
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - !reference [.rules-code, rules]
+  interruptible: true
+  script:
+    - cargo build --release
+    - ls -lh target/release/libfingerprinting_plugin.so
+  artifacts:
+    paths:
+      - target/release/libfingerprinting_plugin.so
+    expire_in: 1 week

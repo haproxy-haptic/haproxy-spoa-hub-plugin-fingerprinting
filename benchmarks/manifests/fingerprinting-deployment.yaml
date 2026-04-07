@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haproxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haproxy
+  template:
+    metadata:
+      labels:
+        app: haproxy
+    spec:
+      containers:
+        - name: haproxy
+          image: HAPROXY_IMAGE_PLACEHOLDER
+          imagePullPolicy: Never
+          command: ["haproxy"]
+          args: ["-f", "/usr/local/etc/haproxy/haproxy.cfg", "-db"]
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: haproxy-config
+              mountPath: /usr/local/etc/haproxy/haproxy.cfg
+              subPath: haproxy.cfg
+            - name: spoe-config
+              mountPath: /etc/haproxy/spoe-fingerprint.conf
+              subPath: spoe-fingerprint.conf
+            - name: tls-certs
+              mountPath: /etc/haproxy/certs
+              readOnly: true
+            - name: spoe-socket
+              mountPath: /var/run/spoe
+          resources:
+            requests:
+              cpu: "2"
+              memory: "256Mi"
+            limits:
+              cpu: "4"
+              memory: "512Mi"
+        - name: spoa-hub
+          image: bench-hub:latest
+          imagePullPolicy: Never
+          args: ["--config", "/config/config.toml"]
+          volumeMounts:
+            - name: hub-config
+              mountPath: /config
+            - name: spoe-socket
+              mountPath: /var/run/spoe
+          resources:
+            requests:
+              cpu: "1"
+              memory: "64Mi"
+            limits:
+              cpu: "2"
+              memory: "128Mi"
+      volumes:
+        - name: haproxy-config
+          configMap:
+            name: haproxy-config
+        - name: spoe-config
+          configMap:
+            name: spoe-config
+        - name: hub-config
+          configMap:
+            name: hub-config
+        - name: tls-certs
+          secret:
+            secretName: haproxy-tls
+        - name: spoe-socket
+          emptyDir:
+            medium: Memory
