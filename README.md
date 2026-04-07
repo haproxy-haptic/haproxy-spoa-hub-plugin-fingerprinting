@@ -44,7 +44,7 @@ By default, the plugin produces JA3N fingerprints (sorted extensions, extension 
 ```toml
 [plugins.params]
 sort_extensions = false     # JA3 instead of JA3N
-exclude_extensions = []     # include all extensions (no exclusion)
+exclude_extension = -1      # include all extensions (no exclusion)
 ```
 
 ### Configure HAProxy
@@ -103,22 +103,7 @@ curl -k https://localhost:443/ -v 2>&1 | grep X-Fingerprint
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `sort_extensions` | boolean | `true` | Sort extensions numerically (JA3N behavior). Set to `false` for standard JA3. |
-| `exclude_extensions` | array of integers | `[41]` | TLS extension IDs to omit from the extensions field before hashing. Set to `[]` to include all extensions. See below. |
-
-#### Why exclude extensions?
-
-Some TLS extensions carry per-session data that changes on every connection, even from the same client. If included in the fingerprint, they make the hash unstable — the same browser would produce a different fingerprint every time it connects.
-
-The default excludes extension 41 (`pre_shared_key`), which contains TLS session resumption tickets. This is the standard behavior for JA3N.
-
-You can exclude multiple extensions:
-
-```toml
-[plugins.params]
-exclude_extensions = [41, 43]
-```
-
-Set `exclude_extensions = []` if you want the raw JA3 fingerprint with no extensions removed.
+| `exclude_extension` | integer | `41` | Extension ID to exclude from the fingerprint. Set to `-1` to include all extensions. Extension 41 (pre_shared_key) is excluded by default because it contains session-specific data that changes per connection. |
 
 ### Output Variables
 
