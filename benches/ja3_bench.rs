@@ -36,15 +36,15 @@ fn bench_ja3(c: &mut Criterion) {
     let curl = curl_data();
 
     c.bench_function("ja3_chrome", |b| {
-        b.iter(|| compute_ja3(&chrome, false, &[41]));
+        b.iter(|| compute_ja3(&chrome, false, 41));
     });
 
     c.bench_function("ja3n_chrome", |b| {
-        b.iter(|| compute_ja3(&chrome, true, &[41]));
+        b.iter(|| compute_ja3(&chrome, true, 41));
     });
 
     c.bench_function("ja3n_curl", |b| {
-        b.iter(|| compute_ja3(&curl, true, &[41]));
+        b.iter(|| compute_ja3(&curl, true, 41));
     });
 }
 

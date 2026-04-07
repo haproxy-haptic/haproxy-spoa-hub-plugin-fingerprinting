@@ -41,11 +41,10 @@ define_plugin!(FingerprintingPlugin, {
         &self,
         message: &SpoeMessage,
     ) -> Result<ProcessingResult, Box<dyn std::error::Error + Send + Sync>> {
-        let default_config = PluginConfig::default();
-        let config = CONFIG.get().unwrap_or(&default_config);
+        let config = CONFIG.get().unwrap_or(&PluginConfig::DEFAULT);
         let data = extract_client_hello(message);
 
-        let (hash, raw) = compute_ja3(&data, config.sort_extensions, &config.exclude_extensions);
+        let (hash, raw) = compute_ja3(&data, config.sort_extensions, config.exclude_extension);
 
         let mut variables = RVec::with_capacity(2);
         variables.push(TxnVariable {

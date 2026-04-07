@@ -10,7 +10,7 @@ license = "MIT"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-haproxy-spoa-hub-plugin-api = { git = "https://gitlab.com/haproxy-haptic/haproxy-spoa-hub.git", branch = "main" }
+haproxy-spoa-hub-plugin-api = { path = "../haproxy-spoa-hub/crates/plugin-api" }
 abi_stable = "0.11"
 md-5 = "0.10"
 log = "0.4"

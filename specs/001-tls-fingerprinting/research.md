@@ -70,4 +70,4 @@
 
 **Decision**: Use real ClientHello data from the existing haproxy-fingerprinting test suite (Chrome, Firefox, curl) as test vectors.
 
-**Rationale**: Test vectors are sourced from independent JA3 implementations (open-ch/ja3, Wireshark) with published expected hashes that can be independently verified.
+**Rationale**: These are proven reference values already validated against HAProxy Enterprise's JA3N output. The C test suite (`tests/test_ja3.c`) and Rust tests (`spoe-agent/src/main.rs`) contain the exact binary inputs and expected outputs.

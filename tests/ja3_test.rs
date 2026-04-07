@@ -39,7 +39,7 @@ fn open_ch_chrome_tls12() {
         &[23, 25, 28, 27, 24, 26, 22, 14, 13, 11, 12, 9, 10],
         &[0, 1, 2],
     );
-    let (hash, raw) = compute_ja3(&data, false, &[]);
+    let (hash, raw) = compute_ja3(&data, false, -1);
     assert_eq!(
         raw,
         "771,49200-49196-49199-49195-49172-49162-49171-49161-159-158-57-51-157-156-53-47-10-255,\
@@ -53,7 +53,7 @@ fn open_ch_chrome_tls12() {
 #[test]
 fn open_ch_grease_filtering() {
     let data = make_data(768, &[0x2a2a], &[0], &[], &[]);
-    let (hash, raw) = compute_ja3(&data, false, &[]);
+    let (hash, raw) = compute_ja3(&data, false, -1);
     assert_eq!(raw, "768,,0,,");
     assert_eq!(hash, "633682cdbaaa3594417b8a6514f56ac7");
 }
@@ -74,7 +74,7 @@ fn wireshark_chrome_grease() {
         &[0x4a4a, 29, 23, 24],
         &[0],
     );
-    let (hash, raw) = compute_ja3(&data, false, &[]);
+    let (hash, raw) = compute_ja3(&data, false, -1);
     assert_eq!(
         raw,
         "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,\
@@ -107,8 +107,8 @@ fn ja3n_chrome_sorted_extensions() {
         &[0x4a4a, 29, 23, 24],
         &[0],
     );
-    let (hash_ja3, _) = compute_ja3(&data, false, &[]);
-    let (hash_ja3n, raw_ja3n) = compute_ja3(&data, true, &[]);
+    let (hash_ja3, _) = compute_ja3(&data, false, -1);
+    let (hash_ja3n, raw_ja3n) = compute_ja3(&data, true, -1);
 
     // Extensions are numerically sorted
     assert_eq!(
@@ -126,11 +126,11 @@ fn ja3n_excludes_ext_41() {
     let data = make_data(771, &[], &[0, 41, 23, 10], &[], &[]);
 
     // No exclusion keeps 41
-    let (_, raw) = compute_ja3(&data, true, &[]);
+    let (_, raw) = compute_ja3(&data, true, -1);
     assert_eq!(raw, "771,,0-10-23-41,,");
 
     // Exclude 41
-    let (_, raw) = compute_ja3(&data, true, &[41]);
+    let (_, raw) = compute_ja3(&data, true, 41);
     assert_eq!(raw, "771,,0-10-23,,");
 }
 
@@ -141,7 +141,7 @@ fn ja3n_excludes_ext_41() {
 #[test]
 fn empty_fields() {
     let data = make_data(771, &[], &[], &[], &[]);
-    let (hash, raw) = compute_ja3(&data, false, &[]);
+    let (hash, raw) = compute_ja3(&data, false, -1);
     assert_eq!(raw, "771,,,,");
     assert_eq!(hash.len(), 32);
     assert!(
@@ -153,7 +153,7 @@ fn empty_fields() {
 #[test]
 fn all_grease_ciphers_produce_empty_field() {
     let data = make_data(771, &[0x0a0a, 0x1a1a, 0x2a2a], &[], &[], &[]);
-    let (_, raw) = compute_ja3(&data, false, &[]);
+    let (_, raw) = compute_ja3(&data, false, -1);
     assert_eq!(raw, "771,,,,");
 }
 
@@ -161,30 +161,23 @@ fn all_grease_ciphers_produce_empty_field() {
 fn unsorted_vs_sorted_extensions() {
     let data = make_data(771, &[], &[51, 27, 0, 16], &[], &[]);
 
-    let (_, unsorted) = compute_ja3(&data, false, &[]);
+    let (_, unsorted) = compute_ja3(&data, false, -1);
     assert_eq!(unsorted, "771,,51-27-0-16,,");
 
-    let (_, sorted) = compute_ja3(&data, true, &[]);
+    let (_, sorted) = compute_ja3(&data, true, -1);
     assert_eq!(sorted, "771,,0-16-27-51,,");
 }
 
 #[test]
 fn custom_exclusion() {
     let data = make_data(771, &[], &[0, 16, 23], &[], &[]);
-    let (_, raw) = compute_ja3(&data, true, &[16]);
+    let (_, raw) = compute_ja3(&data, true, 16);
     assert_eq!(raw, "771,,0-23,,");
-}
-
-#[test]
-fn multiple_exclusions() {
-    let data = make_data(771, &[], &[0, 16, 23, 41, 43], &[], &[]);
-    let (_, raw) = compute_ja3(&data, true, &[41, 43]);
-    assert_eq!(raw, "771,,0-16-23,,");
 }
 
 #[test]
 fn grease_filtered_from_all_fields() {
     let data = make_data(771, &[0x0a0a, 47], &[0x1a1a, 23], &[0x2a2a, 29], &[0]);
-    let (_, raw) = compute_ja3(&data, false, &[]);
+    let (_, raw) = compute_ja3(&data, false, -1);
     assert_eq!(raw, "771,47,23,29,0");
 }

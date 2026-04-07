@@ -114,5 +114,5 @@ As a plugin maintainer, I can add new fingerprinting techniques (such as JA4, HT
 - HAProxy is configured with `tune.ssl.capture-buffer-size` of at least 256 bytes, providing complete ClientHello data to the SPOE engine.
 - The SPOE message format follows the same field naming and binary encoding conventions as the existing haproxy-fingerprinting project (`proto`, `ciphers`, `extensions`, `curves`, `formats`).
 - The plugin targets the current haproxy-spoa-hub plugin API (using `abi_stable` for FFI safety and the `define_plugin!` macro).
-- JA3N output must be compatible with standard JA3N implementations (sorted extensions, extension 41 excluded) for comparison and migration purposes.
+- JA3N output must be compatible with HAProxy Enterprise's `req.fingerprint_ssl.ja3_hash(EL_EXCLUDE:41,EL_SORT)` for comparison and migration purposes.
 - The Rust `md-5` crate is acceptable for MD5 hashing (same as used in the existing SPOE agent implementation).

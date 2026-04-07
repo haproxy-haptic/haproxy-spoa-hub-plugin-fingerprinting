@@ -345,7 +345,6 @@ dependencies = [
 [[package]]
 name = "haproxy-spoa-hub-plugin-api"
 version = "0.1.0"
-source = "git+https://gitlab.com/haproxy-haptic/haproxy-spoa-hub.git?branch=main#3cf33707c8111c593738224c96263b760f654338"
 dependencies = [
  "abi_stable",
 ]

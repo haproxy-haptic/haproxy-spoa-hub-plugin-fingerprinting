@@ -1,4 +1,4 @@
-use abi_stable::std_types::{RHashMap, RString, RVec};
+use abi_stable::std_types::{RHashMap, RString};
 use haproxy_spoa_hub_plugin_api::{ConfigValue, PluginContext};
 
 use fingerprinting_plugin::config::PluginConfig;
@@ -10,7 +10,7 @@ fn default_config() {
     let context = make_context(&[]);
     let config = PluginConfig::from_context(&context);
     assert!(config.sort_extensions);
-    assert_eq!(config.exclude_extensions, vec![41]);
+    assert_eq!(config.exclude_extension, 41);
 }
 
 #[test]
@@ -18,27 +18,22 @@ fn sort_extensions_false() {
     let context = make_context(&[("sort_extensions", ConfigValue::Bool(false))]);
     let config = PluginConfig::from_context(&context);
     assert!(!config.sort_extensions);
-    assert_eq!(config.exclude_extensions, vec![41]);
+    assert_eq!(config.exclude_extension, 41);
 }
 
 #[test]
-fn custom_exclude_extensions() {
-    let context = make_context(&[(
-        "exclude_extensions",
-        ConfigValue::Array(RVec::from(vec![
-            ConfigValue::Integer(41),
-            ConfigValue::Integer(43),
-        ])),
-    )]);
+fn custom_exclude_extension() {
+    let context = make_context(&[("exclude_extension", ConfigValue::Integer(16))]);
     let config = PluginConfig::from_context(&context);
-    assert_eq!(config.exclude_extensions, vec![41, 43]);
+    assert!(config.sort_extensions);
+    assert_eq!(config.exclude_extension, 16);
 }
 
 #[test]
-fn no_exclusions() {
-    let context = make_context(&[("exclude_extensions", ConfigValue::Array(RVec::from(vec![])))]);
+fn no_exclusion() {
+    let context = make_context(&[("exclude_extension", ConfigValue::Integer(-1))]);
     let config = PluginConfig::from_context(&context);
-    assert!(config.exclude_extensions.is_empty());
+    assert_eq!(config.exclude_extension, -1);
 }
 
 #[test]
@@ -48,7 +43,7 @@ fn config_schema_is_valid_json() {
         serde_json::from_str(schema).expect("Schema must be valid JSON");
     assert_eq!(parsed["type"], "object");
     assert!(parsed["properties"]["sort_extensions"]["type"] == "boolean");
-    assert!(parsed["properties"]["exclude_extensions"]["type"] == "array");
+    assert!(parsed["properties"]["exclude_extension"]["type"] == "integer");
     assert_eq!(parsed["additionalProperties"], false);
 }
 
@@ -72,8 +67,8 @@ fn chrome_data_produces_correct_fingerprint() {
         ec_point_formats: vec![0],
     };
 
-    let (ja3_hash, _) = compute_ja3(&data, false, &[41]);
-    let (ja3n_hash, _) = compute_ja3(&data, true, &[41]);
+    let (ja3_hash, _) = compute_ja3(&data, false, 41);
+    let (ja3n_hash, _) = compute_ja3(&data, true, 41);
 
     // JA3 and JA3N hashes differ (different extension order)
     assert_ne!(ja3_hash, ja3n_hash);
@@ -91,7 +86,7 @@ fn missing_arguments_produce_empty_field_fingerprints() {
         ec_point_formats: vec![],
     };
 
-    let (hash, raw) = compute_ja3(&data, true, &[41]);
+    let (hash, raw) = compute_ja3(&data, true, 41);
     assert_eq!(raw, "0,,,,");
     assert_eq!(hash.len(), 32);
 }
