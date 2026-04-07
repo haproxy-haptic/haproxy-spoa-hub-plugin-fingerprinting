@@ -103,7 +103,15 @@ curl -k https://localhost:443/ -v 2>&1 | grep X-Fingerprint
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `sort_extensions` | boolean | `true` | Sort extensions numerically (JA3N behavior). Set to `false` for standard JA3. |
-| `exclude_extension` | integer | `41` | Extension ID to exclude from the fingerprint. Set to `-1` to include all extensions. Extension 41 (pre_shared_key) is excluded by default because it contains session-specific data that changes per connection. |
+| `exclude_extension` | integer | `41` | TLS extension ID to omit from the extensions field before hashing. Set to `-1` to disable exclusion. See below. |
+
+#### Why exclude an extension?
+
+Some TLS extensions carry per-session data that changes on every connection, even from the same client. If included in the fingerprint, they make the hash unstable — the same browser would produce a different fingerprint every time it connects.
+
+The default excludes extension 41 (`pre_shared_key`), which contains TLS session resumption tickets. This is the standard behavior for JA3N and matches HAProxy Enterprise's `ja3_hash(EL_EXCLUDE:41,EL_SORT)`.
+
+Set `exclude_extension = -1` if you want the raw JA3 fingerprint with no extensions removed. You can also exclude a different extension by its numeric ID if your use case requires it.
 
 ### Output Variables
 
