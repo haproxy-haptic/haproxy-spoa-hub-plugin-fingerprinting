@@ -15,11 +15,12 @@ const HEX: &[u8; 16] = b"0123456789abcdef";
 /// - `md5_hash` is the 32-character lowercase hex MD5 digest of the raw string
 ///
 /// `sort_extensions`: true for JA3N (sorted ascending), false for JA3 (original order).
-/// `exclude_ext`: extension ID to exclude (-1 for none). Default is 41 (pre_shared_key).
+/// `exclude_extensions`: extension IDs to omit (e.g., `&[41]` for pre_shared_key).
+///   Pass an empty slice to include all extensions.
 pub fn compute_ja3(
     data: &ClientHelloData,
     sort_extensions: bool,
-    exclude_ext: i32,
+    exclude_extensions: &[u16],
 ) -> (String, String) {
     let mut raw = String::with_capacity(256);
 
@@ -30,20 +31,20 @@ pub fn compute_ja3(
     raw.push(',');
     write_filtered_u16(&mut raw, &data.cipher_suites, |v| !is_grease(v));
 
-    // Extensions (GREASE filtered, exclude_ext filtered, optionally sorted)
+    // Extensions (GREASE filtered, exclusions applied, optionally sorted)
     raw.push(',');
     if sort_extensions {
         let mut exts: Vec<u16> = data
             .extensions
             .iter()
             .copied()
-            .filter(|&v| !is_grease(v) && (exclude_ext < 0 || v != exclude_ext as u16))
+            .filter(|&v| !is_grease(v) && !exclude_extensions.contains(&v))
             .collect();
         exts.sort_unstable();
         write_u16_joined(&mut raw, &exts);
     } else {
         write_filtered_u16(&mut raw, &data.extensions, |v| {
-            !is_grease(v) && (exclude_ext < 0 || v != exclude_ext as u16)
+            !is_grease(v) && !exclude_extensions.contains(&v)
         });
     }
 

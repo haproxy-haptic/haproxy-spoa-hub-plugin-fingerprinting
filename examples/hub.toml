@@ -14,8 +14,9 @@ messages = ["get-fingerprint"]
 
 # To customize behavior:
 # [plugins.params]
-# sort_extensions = false     # JA3 instead of JA3N
-# exclude_extension = -1      # include all extensions
+# sort_extensions = false        # JA3 instead of JA3N
+# exclude_extensions = []        # include all extensions
+# exclude_extensions = [41, 43]  # exclude multiple extensions
 
 # To get both JA3 and JA3N, register the plugin twice:
 #
@@ -25,6 +26,7 @@ messages = ["get-fingerprint"]
 # messages = ["get-fingerprint"]
 # [plugins.params]
 # sort_extensions = false
+# exclude_extensions = []
 #
 # [[plugins]]
 # name = "ja3n"
@@ -32,3 +34,4 @@ messages = ["get-fingerprint"]
 # messages = ["get-fingerprint"]
 # [plugins.params]
 # sort_extensions = true
+# exclude_extensions = [41]

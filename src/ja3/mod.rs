@@ -15,7 +15,7 @@ impl FingerprintTechnique for Ja3Technique {
     }
 
     fn compute(&self, data: &ClientHelloData) -> Vec<(String, String)> {
-        let (hash, raw) = compute_ja3(data, false, 41);
+        let (hash, raw) = compute_ja3(data, false, &[41]);
         vec![("ja3_hash".to_string(), hash), ("ja3_raw".to_string(), raw)]
     }
 }
@@ -30,7 +30,7 @@ impl FingerprintTechnique for Ja3nTechnique {
     }
 
     fn compute(&self, data: &ClientHelloData) -> Vec<(String, String)> {
-        let (hash, raw) = compute_ja3(data, true, 41);
+        let (hash, raw) = compute_ja3(data, true, &[41]);
         vec![
             ("ja3n_hash".to_string(), hash),
             ("ja3n_raw".to_string(), raw),

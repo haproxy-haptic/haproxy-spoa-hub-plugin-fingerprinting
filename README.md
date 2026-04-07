@@ -44,7 +44,7 @@ By default, the plugin produces JA3N fingerprints (sorted extensions, extension 
 ```toml
 [plugins.params]
 sort_extensions = false     # JA3 instead of JA3N
-exclude_extension = -1      # include all extensions (no exclusion)
+exclude_extensions = []     # include all extensions (no exclusion)
 ```
 
 ### Configure HAProxy
@@ -103,15 +103,22 @@ curl -k https://localhost:443/ -v 2>&1 | grep X-Fingerprint
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `sort_extensions` | boolean | `true` | Sort extensions numerically (JA3N behavior). Set to `false` for standard JA3. |
-| `exclude_extension` | integer | `41` | TLS extension ID to omit from the extensions field before hashing. Set to `-1` to disable exclusion. See below. |
+| `exclude_extensions` | array of integers | `[41]` | TLS extension IDs to omit from the extensions field before hashing. Set to `[]` to include all extensions. See below. |
 
-#### Why exclude an extension?
+#### Why exclude extensions?
 
 Some TLS extensions carry per-session data that changes on every connection, even from the same client. If included in the fingerprint, they make the hash unstable — the same browser would produce a different fingerprint every time it connects.
 
 The default excludes extension 41 (`pre_shared_key`), which contains TLS session resumption tickets. This is the standard behavior for JA3N and matches HAProxy Enterprise's `ja3_hash(EL_EXCLUDE:41,EL_SORT)`.
 
-Set `exclude_extension = -1` if you want the raw JA3 fingerprint with no extensions removed. You can also exclude a different extension by its numeric ID if your use case requires it.
+You can exclude multiple extensions, matching HAPEE's pipe-separated syntax `EL_EXCLUDE:41|43`:
+
+```toml
+[plugins.params]
+exclude_extensions = [41, 43]
+```
+
+Set `exclude_extensions = []` if you want the raw JA3 fingerprint with no extensions removed.
 
 ### Output Variables
 
