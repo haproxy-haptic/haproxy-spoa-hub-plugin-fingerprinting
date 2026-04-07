@@ -109,9 +109,9 @@ curl -k https://localhost:443/ -v 2>&1 | grep X-Fingerprint
 
 Some TLS extensions carry per-session data that changes on every connection, even from the same client. If included in the fingerprint, they make the hash unstable — the same browser would produce a different fingerprint every time it connects.
 
-The default excludes extension 41 (`pre_shared_key`), which contains TLS session resumption tickets. This is the standard behavior for JA3N and matches HAProxy Enterprise's `ja3_hash(EL_EXCLUDE:41,EL_SORT)`.
+The default excludes extension 41 (`pre_shared_key`), which contains TLS session resumption tickets. This is the standard behavior for JA3N.
 
-You can exclude multiple extensions, matching HAPEE's pipe-separated syntax `EL_EXCLUDE:41|43`:
+You can exclude multiple extensions:
 
 ```toml
 [plugins.params]
