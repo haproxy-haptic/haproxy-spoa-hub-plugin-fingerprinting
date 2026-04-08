@@ -7,10 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Release builds now use LTO and single codegen unit for 9-23% better
-  performance on fingerprinting hot paths
+## [0.1.0] - 2026-04-08
 
 ### Added
 
@@ -28,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker Compose integration tests with HAProxy
 - Example SPOE and hub configurations
 - GitLab CI pipeline (fmt, clippy, test, bench, build)
+- Release builds use LTO and single codegen unit for optimal performance
 
 ### Known Limitations
 
