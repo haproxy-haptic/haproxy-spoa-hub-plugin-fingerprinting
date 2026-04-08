@@ -32,6 +32,18 @@ cargo build --release
 
 The output is `target/release/libfingerprinting_plugin.so`. Copy it to the hub's plugin directory.
 
+Pre-built binaries for all supported architectures are available on the [releases page](https://gitlab.com/haproxy-haptic/haproxy-spoa-hub-plugin-fingerprinting/-/releases).
+
+### Supported Architectures
+
+| Architecture | Rust Target | Compatible With |
+|-------------|-------------|-----------------|
+| `amd64` | `x86_64-unknown-linux-gnu` | haproxytech/haproxy-debian (amd64) |
+| `arm64` | `aarch64-unknown-linux-gnu` | haproxytech/haproxy-debian (arm64) |
+| `armv7` | `armv7-unknown-linux-gnueabihf` | haproxytech/haproxy-debian (arm/v7) |
+
+All binaries are built on Debian bookworm and require **glibc >= 2.36** at runtime. The glibc version is included in the filename (e.g., `libfingerprinting_plugin-amd64-glibc2.36.so`). The haproxytech/haproxy-debian images use bookworm and are fully compatible.
+
 ### Configure the Hub
 
 ```toml
