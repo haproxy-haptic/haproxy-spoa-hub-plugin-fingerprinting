@@ -3,6 +3,7 @@
 pub mod common;
 pub mod config;
 pub mod ja3;
+pub mod ja4;
 pub mod technique;
 
 mod plugin;

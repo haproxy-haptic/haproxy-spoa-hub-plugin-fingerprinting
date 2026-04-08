@@ -1,87 +1,81 @@
 # Research: JA4 TLS Fingerprinting
 
 **Feature**: 002-ja4-fingerprinting
-**Date**: 2026-04-06
+**Date**: 2026-04-07
 
 ## Decision: SPOE Message Format
 
-**Decision**: Use individual SPOE message arguments (one per TLS field), not raw ClientHello buffer parsing.
+**Decision**: Extend the existing SPOE message with additional arguments for JA4-specific fields. Reuse `proto`, `ciphers`, `extensions` from JA3/JA3N; add `supported_versions`, `sigalgs`, `alpn`, and `sni`.
 
-**Rationale**: HAProxy's SSL capture buffer (`ssl_capture` struct) stores pre-parsed field arrays, not raw ClientHello bytes. The buffer is populated by `ssl_sock_parse_clienthello()` which extracts specific fields into a packed `data[]` array with offset/length metadata. HAProxy exposes these fields through individual sample fetch functions, which are the natural SPOE argument sources.
+**Rationale**: HAProxy's SSL capture buffer stores pre-parsed field arrays with dedicated fetch functions for each. The FriendlyCaptcha and O-X-L JA4 Lua implementations both use the same individual-fetch approach.
 
-**Alternatives considered**:
-- Raw ClientHello buffer parsing in the plugin — rejected because HAProxy does not expose the raw ClientHello; the capture buffer is already pre-parsed.
-- Custom HAProxy patch to capture raw ClientHello — rejected as out of scope and unnecessary.
+**SPOE argument list for JA4**:
 
-**Impact on feature 001**: The `001-tls-fingerprinting` spec assumed raw buffer parsing. This must be corrected: JA3/JA3N will continue using individual SPOE arguments (`proto`, `ciphers`, `extensions`, `curves`, `formats`) as the existing haproxy-fingerprinting project does.
-
-## Decision: SPOE Arguments for JA4
-
-**Decision**: Extend the SPOE message with two additional arguments beyond what JA3/JA3N uses, plus one best-effort argument.
-
-**Rationale**: JA4 requires three data sources not needed by JA3/JA3N:
-1. **Supported versions** (extension 0x002b payload) — available via `ssl_fc_supported_versions_bin`
-2. **Signature algorithms** (extension 0x000d payload) — available via `ssl_fc_sigalgs_bin`
-3. **Client-offered ALPN** (extension 0x0010 payload) — NOT available from HAProxy's capture buffer
-
-**Complete SPOE argument list**:
-
-| Argument | HAProxy Fetch | Used by | Format |
-|----------|---------------|---------|--------|
-| `proto` | `ssl_fc_protocol_hello_id` | JA3, JA3N, JA4 | Integer (u16) |
-| `ciphers` | `ssl_fc_cipherlist_bin` | JA3, JA3N, JA4 | Binary u16 BE pairs |
-| `extensions` | `ssl_fc_extlist_bin` | JA3, JA3N, JA4 | Binary u16 BE pairs |
-| `curves` | `ssl_fc_eclist_bin` | JA3, JA3N, JA4 | Binary u16 BE pairs |
-| `formats` | `ssl_fc_ecformats_bin` | JA3, JA3N | Binary u8 values |
-| `supported_versions` | `ssl_fc_supported_versions_bin` | JA4 | Binary u16 BE pairs |
-| `sigalgs` | `ssl_fc_sigalgs_bin` | JA4 | Binary u16 BE pairs |
-| `alpn` | `ssl_fc_alpn` | JA4 | String (negotiated) |
-
-**Note on GREASE filtering**: The `_bin` fetch functions accept an optional argument `(1)` to pre-filter GREASE values. However, since the plugin performs its own GREASE filtering (and JA4 needs accurate counts of non-GREASE values), the SPOE config should pass these without the GREASE filter argument, letting the plugin handle GREASE filtering consistently across all techniques.
+| Argument | HAProxy Fetch | Format | Shared with JA3 |
+|----------|---------------|--------|-----------------|
+| `proto` | `ssl_fc_protocol_hello_id` | Integer | Yes |
+| `ciphers` | `ssl_fc_cipherlist_bin(1)` | Binary u16 BE, GREASE pre-filtered | Yes |
+| `extensions` | `ssl_fc_extlist_bin(1)` | Binary u16 BE, GREASE pre-filtered | Yes |
+| `supported_versions` | `ssl_fc_supported_versions_bin(1)` | Binary u16 BE, GREASE pre-filtered | No |
+| `sigalgs` | `ssl_fc_sigalgs_bin(1)` | Binary u16 BE, GREASE pre-filtered | No |
+| `alpn` | `ssl_fc_alpn` | String (negotiated) | No |
+| `sni` | `ssl_fc_has_sni` | Boolean/Integer | No |
 
 ## Decision: ALPN Handling
 
-**Decision**: Use `ssl_fc_alpn` (server-negotiated ALPN) as a best-effort approximation. Document the limitation.
+**Decision**: Use `ssl_fc_alpn` (server-negotiated ALPN) as best-effort approximation.
 
-**Rationale**: HAProxy's `ssl_sock_parse_clienthello()` does not parse extension 16 (ALPN) payload. The `ssl_fc_alpn` fetch returns the negotiated protocol (what the server selected), not the client's offered list. For JA4's section A, we need the first and last alphanumeric character of the FIRST value from the client's offered list.
-
-In practice, the negotiated ALPN is usually the client's preferred protocol (servers typically respect client preference order or prefer `h2`). This produces correct JA4 fingerprints in the common case but may differ when the server overrides client preference.
+**Rationale**: HAProxy does not capture the client-offered ALPN list (extension 16 payload). Both existing HAProxy JA4 implementations (FriendlyCaptcha Lua, O-X-L Lua) use the negotiated ALPN and document it as a known limitation. In practice, servers almost always select the client's preferred protocol.
 
 **Alternatives considered**:
-- Default to `00` (no ALPN) — rejected because it produces fingerprints that never match reference implementations, reducing utility.
-- Patch HAProxy to capture extension 16 payload — viable future enhancement but out of scope for initial implementation.
-- Parse raw TLS via a separate capture mechanism — overly complex for one field.
+- Default to `00` — rejected because fingerprints would never match reference databases.
+- Patch HAProxy to capture extension 16 — out of scope.
 
-**Mitigation**: Document in the plugin README that the ALPN field uses the negotiated protocol as an approximation. If HAProxy adds a `ssl_fc_client_alpn` fetch in the future, the plugin can adopt it without architectural changes.
+## Decision: TLS Version for Section A
+
+**Decision**: Use `supported_versions` binary data to find the highest non-GREASE version. Fall back to `proto` if absent.
+
+**Rationale**: TLS 1.3 clients set the ClientHello version to 0x0303 (TLS 1.2) for backward compatibility, advertising actual support via `supported_versions`. Both reference Lua implementations use this logic.
+
+**Version mapping**: 0x0304→`13`, 0x0303→`12`, 0x0302→`11`, 0x0301→`10`, 0x0300→`s3`, unknown→`00`.
 
 ## Decision: SNI Detection
 
-**Decision**: Detect SNI presence by checking if extension type 0x0000 (server_name) is present in the extensions list.
+**Decision**: Use `ssl_fc_has_sni` as a dedicated SPOE argument.
 
-**Rationale**: The extensions binary data contains type IDs. Extension 0x0000 is the server_name extension. Its presence indicates SNI was offered (JA4 section A: `d` for domain). Its absence indicates no SNI (`i` for IP).
+**Rationale**: Both reference Lua implementations use this fetch. Cleaner than scanning extensions binary for type 0x0000.
 
-## Decision: TLS Version for JA4 Section A
+## Decision: Empty Section Handling
 
-**Decision**: Use `supported_versions` data (if present) to determine the highest non-GREASE version. Fall back to `proto` (ClientHello protocol version field) if `supported_versions` is empty or absent.
+**Decision**: Return literal `000000000000` for empty sections (not SHA256 of empty string).
 
-**Rationale**: Per the JA4 specification, `supported_versions` (extension 0x002b) takes priority because TLS 1.3 clients set the ClientHello protocol version to 0x0303 (TLS 1.2) for backward compatibility, while advertising TLS 1.3 support via `supported_versions`.
+**Rationale**: FoxIO reference implementation and both Lua implementations return this literal value. The actual SHA256 of empty string truncated to 12 chars would be `e3b0c4429802`, which would be misleading.
 
-**Version mapping**:
-- 0x0304 → `13` (TLS 1.3)
-- 0x0303 → `12` (TLS 1.2)
-- 0x0302 → `11` (TLS 1.1)
-- 0x0301 → `10` (TLS 1.0)
-- 0x0300 → `s3` (SSL 3.0)
-- Unknown → `00`
+## Decision: GREASE Filtering
 
-## Decision: Rust Crate for SHA256
+**Decision**: Use HAProxy's `(1)` argument to `_bin` fetches for GREASE pre-filtering. No additional plugin-side GREASE filtering for JA4.
 
-**Decision**: Use the `sha2` crate for SHA256 hashing.
+**Rationale**: Both reference Lua implementations rely entirely on HAProxy's pre-filtering. The `(1)` argument is well-established across HAProxy 2.8+.
 
-**Rationale**: The `sha2` crate is the standard pure-Rust SHA-2 implementation from the RustCrypto project. It is widely used, well-audited, and has no system dependencies (unlike OpenSSL bindings). The existing haproxy-fingerprinting SPOE agent uses `md-5` from the same RustCrypto project family.
+## Decision: SHA256 Crate
+
+**Decision**: Use the `sha2` crate from the RustCrypto project.
+
+**Rationale**: Same family as `md-5` already used for JA3. Pure Rust, no system dependencies.
 
 ## Decision: Project Structure
 
-**Decision**: The JA4 module is added to the existing fingerprinting plugin crate as a new module, following the extensible architecture from feature 001.
+**Decision**: Add JA4 as a new `src/ja4/` module alongside the existing `src/ja3/` module.
 
-**Rationale**: JA4 shares input data parsing (GREASE filtering, binary field decoding) with JA3/JA3N. Keeping it in the same crate avoids duplication and aligns with the plugin's single-library deployment model.
+**Rationale**: JA4 shares some infrastructure (binary parsing, types) with JA3 but has fundamentally different computation (SHA256 vs MD5, hex encoding, section A metadata). Separate module keeps concerns isolated and validates the extensible architecture (SC-004).
+
+## Cross-Reference: Existing HAProxy JA4 Implementations
+
+Two Lua implementations were analyzed for correctness validation:
+
+1. **FriendlyCaptcha/ja4-haproxy** — Correct implementation per FoxIO spec. Documents the negotiated-ALPN limitation.
+2. **O-X-L/haproxy-ja4-fingerprint** — Mostly correct but has deviations:
+   - JA4_r format splits section A into individual underscore-separated fields (non-standard)
+   - ALPN non-alphanumeric handling uses hex encoding instead of scanning for alphanumeric chars
+
+Our implementation follows the FoxIO spec and avoids both O-X-L deviations.

@@ -49,7 +49,22 @@ fn config_schema_is_valid_json() {
     assert_eq!(parsed["type"], "object");
     assert!(parsed["properties"]["sort_extensions"]["type"] == "boolean");
     assert!(parsed["properties"]["exclude_extensions"]["type"] == "array");
+    assert!(parsed["properties"]["ja4"]["type"] == "boolean");
     assert_eq!(parsed["additionalProperties"], false);
+}
+
+#[test]
+fn ja4_enabled_by_default() {
+    let context = make_context(&[]);
+    let config = PluginConfig::from_context(&context);
+    assert!(config.ja4);
+}
+
+#[test]
+fn ja4_disabled() {
+    let context = make_context(&[("ja4", ConfigValue::Bool(false))]);
+    let config = PluginConfig::from_context(&context);
+    assert!(!config.ja4);
 }
 
 // --- Compute tests ---
@@ -70,6 +85,10 @@ fn chrome_data_produces_correct_fingerprint() {
         ],
         elliptic_curves: vec![0x4a4a, 29, 23, 24],
         ec_point_formats: vec![0],
+        supported_versions: vec![],
+        signature_algorithms: vec![],
+        alpn: None,
+        sni_present: false,
     };
 
     let (ja3_hash, _) = compute_ja3(&data, false, &[41]);
@@ -89,6 +108,10 @@ fn missing_arguments_produce_empty_field_fingerprints() {
         extensions: vec![],
         elliptic_curves: vec![],
         ec_point_formats: vec![],
+        supported_versions: vec![],
+        signature_algorithms: vec![],
+        alpn: None,
+        sni_present: false,
     };
 
     let (hash, raw) = compute_ja3(&data, true, &[41]);

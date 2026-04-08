@@ -14,6 +14,10 @@ fn make_data(
         extensions: extensions.to_vec(),
         elliptic_curves: curves.to_vec(),
         ec_point_formats: formats.to_vec(),
+        supported_versions: vec![],
+        signature_algorithms: vec![],
+        alpn: None,
+        sni_present: false,
     }
 }
 

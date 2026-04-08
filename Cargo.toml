@@ -3,7 +3,7 @@ name = "fingerprinting-plugin"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.86"
-description = "TLS fingerprinting plugin for haproxy-spoa-hub (JA3/JA3N)"
+description = "TLS fingerprinting plugin for haproxy-spoa-hub (JA3/JA3N, JA4)"
 license = "MIT"
 
 [lib]
@@ -13,6 +13,7 @@ crate-type = ["cdylib", "rlib"]
 haproxy-spoa-hub-plugin-api = { git = "https://gitlab.com/haproxy-haptic/haproxy-spoa-hub.git", branch = "main" }
 abi_stable = "0.11"
 md-5 = "0.10"
+sha2 = "0.10"
 log = "0.4"
 
 [dev-dependencies]
