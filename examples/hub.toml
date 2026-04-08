@@ -17,6 +17,7 @@ messages = ["get-fingerprint"]
 # sort_extensions = false        # JA3 instead of JA3N
 # exclude_extensions = []        # include all extensions
 # exclude_extensions = [41, 43]  # exclude multiple extensions
+# ja4 = false                    # disable JA4 fingerprinting
 
 # To get both JA3 and JA3N, register the plugin twice:
 #

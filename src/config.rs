@@ -5,6 +5,7 @@ use haproxy_spoa_hub_plugin_api::PluginContext;
 pub struct PluginConfig {
     pub sort_extensions: bool,
     pub exclude_extensions: Vec<u16>,
+    pub ja4: bool,
 }
 
 impl Default for PluginConfig {
@@ -12,6 +13,7 @@ impl Default for PluginConfig {
         PluginConfig {
             sort_extensions: true,
             exclude_extensions: vec![41],
+            ja4: true,
         }
     }
 }
@@ -35,9 +37,16 @@ impl PluginConfig {
             })
             .unwrap_or_else(|| vec![41]);
 
+        let ja4 = context
+            .config
+            .get("ja4")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+
         PluginConfig {
             sort_extensions,
             exclude_extensions,
+            ja4,
         }
     }
 
@@ -50,7 +59,8 @@ impl PluginConfig {
                     "type": "array",
                     "items": { "type": "integer", "minimum": 0, "maximum": 65535 },
                     "default": [41]
-                }
+                },
+                "ja4": { "type": "boolean", "default": true }
             },
             "additionalProperties": false
         }"#

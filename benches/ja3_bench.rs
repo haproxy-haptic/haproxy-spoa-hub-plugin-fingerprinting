@@ -1,8 +1,9 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use fingerprinting_plugin::common::types::ClientHelloData;
 use fingerprinting_plugin::ja3::compute_ja3;
+use fingerprinting_plugin::ja4::compute_ja4;
 
-fn chrome_data() -> ClientHelloData {
+fn chrome_ja3_data() -> ClientHelloData {
     ClientHelloData {
         protocol_version: 771,
         cipher_suites: vec![
@@ -14,39 +15,54 @@ fn chrome_data() -> ClientHelloData {
         ],
         elliptic_curves: vec![0x4a4a, 29, 23, 24],
         ec_point_formats: vec![0],
+        supported_versions: vec![],
+        signature_algorithms: vec![],
+        alpn: None,
+        sni_present: false,
     }
 }
 
-fn curl_data() -> ClientHelloData {
+fn chrome_ja4_data() -> ClientHelloData {
     ClientHelloData {
-        protocol_version: 771,
+        protocol_version: 0x0303,
         cipher_suites: vec![
-            4866, 4867, 4865, 49196, 49200, 159, 52393, 52392, 49195, 49199, 158, 49188, 49192,
-            107, 49187, 49191, 103, 49162, 49172, 57, 49161, 49171, 51, 157, 156, 61, 60, 53, 47,
-            255,
+            0x1301, 0x1302, 0x1303, 0xc02b, 0xc02f, 0xc02c, 0xc030, 0xcca9, 0xcca8, 0xc013, 0xc014,
+            0x009c, 0x009d, 0x002f, 0x0035,
         ],
-        extensions: vec![11, 10, 35, 22, 23, 13, 43, 45, 51, 0, 16, 17],
-        elliptic_curves: vec![29, 23, 24, 25, 256],
-        ec_point_formats: vec![0, 1, 2],
+        extensions: vec![
+            0x001b, 0x0000, 0x0033, 0x0010, 0x4469, 0x0017, 0x002d, 0x000d, 0x0005, 0x0023, 0x0012,
+            0x002b, 0xff01, 0x000b, 0x000a, 0x0015,
+        ],
+        elliptic_curves: vec![],
+        ec_point_formats: vec![],
+        supported_versions: vec![0x0304, 0x0303],
+        signature_algorithms: vec![
+            0x0403, 0x0804, 0x0401, 0x0503, 0x0805, 0x0501, 0x0806, 0x0601,
+        ],
+        alpn: Some("h2".to_string()),
+        sni_present: true,
     }
 }
 
-fn bench_ja3(c: &mut Criterion) {
-    let chrome = chrome_data();
-    let curl = curl_data();
-
-    c.bench_function("ja3_chrome", |b| {
-        b.iter(|| compute_ja3(&chrome, false, &[41]));
-    });
+fn bench_fingerprints(c: &mut Criterion) {
+    let ja3_data = chrome_ja3_data();
+    let ja4_data = chrome_ja4_data();
 
     c.bench_function("ja3n_chrome", |b| {
-        b.iter(|| compute_ja3(&chrome, true, &[41]));
+        b.iter(|| compute_ja3(&ja3_data, true, &[41]));
     });
 
-    c.bench_function("ja3n_curl", |b| {
-        b.iter(|| compute_ja3(&curl, true, &[41]));
+    c.bench_function("ja4_chrome", |b| {
+        b.iter(|| compute_ja4(&ja4_data));
+    });
+
+    c.bench_function("ja3n+ja4_chrome", |b| {
+        b.iter(|| {
+            compute_ja3(&ja4_data, true, &[41]);
+            compute_ja4(&ja4_data);
+        });
     });
 }
 
-criterion_group!(benches, bench_ja3);
+criterion_group!(benches, bench_fingerprints);
 criterion_main!(benches);

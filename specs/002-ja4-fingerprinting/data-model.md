@@ -19,6 +19,7 @@ Parsed representation of TLS ClientHello fields received via SPOE message argume
 | supported_versions | Vec<u16> | `supported_versions` arg | Supported TLS versions (JA4-specific) |
 | signature_algorithms | Vec<u16> | `sigalgs` arg | Signature algorithm IDs (JA4-specific) |
 | alpn | Option<String> | `alpn` arg | Negotiated ALPN protocol (best-effort, JA4-specific) |
+| sni_present | bool | `sni` arg | Whether SNI extension was present in ClientHello (JA4-specific) |
 
 **Validation rules**:
 - Binary fields with odd byte length: trailing byte ignored, warning logged
