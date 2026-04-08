@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Release builds now use LTO and single codegen unit for 9-23% better
+  performance on fingerprinting hot paths
+
 ### Added
 
 - JA3 and JA3N TLS fingerprinting from ClientHello data via SPOE
@@ -18,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JA4 section A metadata: protocol type, TLS version (from supported_versions), SNI presence, cipher/extension counts, ALPN indicator
 - JA4 raw variant (`ja4_r`) with full sorted hex lists for debugging
 - Unit tests validated against authoritative external sources: open-ch/ja3 and Wireshark (JA3), FoxIO JA4 repository (JA4)
-- Criterion microbenchmarks (JA3N: ~1.9us, JA4: ~5.7us per fingerprint)
+- Criterion microbenchmarks (JA3N: ~1.6us, JA4: ~4.8us per fingerprint)
 - Kind-based e2e benchmarks with fortio (HAProxy 3.3, mode spop)
 - Docker Compose integration tests with HAProxy
 - Example SPOE and hub configurations
