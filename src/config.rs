@@ -21,14 +21,12 @@ impl Default for PluginConfig {
 impl PluginConfig {
     pub fn from_context(context: &PluginContext) -> Self {
         let sort_extensions = context
-            .config
-            .get("sort_extensions")
+            .get_config("sort_extensions")
             .and_then(|v| v.as_bool())
             .unwrap_or(true);
 
         let exclude_extensions = context
-            .config
-            .get("exclude_extensions")
+            .get_config("exclude_extensions")
             .and_then(|v| v.as_array())
             .map(|arr| {
                 arr.iter()
@@ -38,8 +36,7 @@ impl PluginConfig {
             .unwrap_or_else(|| vec![41]);
 
         let ja4 = context
-            .config
-            .get("ja4")
+            .get_config("ja4")
             .and_then(|v| v.as_bool())
             .unwrap_or(true);
 
