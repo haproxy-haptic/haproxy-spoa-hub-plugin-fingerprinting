@@ -1,8 +1,7 @@
 use std::sync::OnceLock;
 
-use abi_stable::std_types::{RString, RVec, Tuple2};
 use haproxy_spoa_hub_plugin_api::{
-    ProcessingResult, SpoeMessage, SpoeValue, TxnVariable, VarScope, define_plugin,
+    ProcessingResult, SpoeMessage, SpoeValue, TxnVariable, define_plugin,
 };
 
 use crate::common::parse::parse_u16_be;
@@ -46,21 +45,24 @@ define_plugin!(FingerprintingPlugin, {
         let config = CONFIG.get().unwrap_or(&default_config);
         let data = extract_client_hello(message);
 
-        let mut variables = RVec::with_capacity(4);
+        let mut vars = Vec::with_capacity(4);
 
         // JA3/JA3N
         let (hash, raw) = compute_ja3(&data, config.sort_extensions, &config.exclude_extensions);
-        variables.push(make_var("hash", hash));
-        variables.push(make_var("raw", raw));
+        vars.push(TxnVariable::session("hash", SpoeValue::String(hash.into())));
+        vars.push(TxnVariable::session("raw", SpoeValue::String(raw.into())));
 
         // JA4
         if config.ja4 {
             let (ja4, ja4_r) = compute_ja4(&data);
-            variables.push(make_var("ja4", ja4));
-            variables.push(make_var("ja4_r", ja4_r));
+            vars.push(TxnVariable::session("ja4", SpoeValue::String(ja4.into())));
+            vars.push(TxnVariable::session(
+                "ja4_r",
+                SpoeValue::String(ja4_r.into()),
+            ));
         }
 
-        Ok(ProcessingResult { variables })
+        Ok(ProcessingResult::from_vars(vars))
     }
 
     fn config_schema(&self) -> Option<&str> {
@@ -68,85 +70,26 @@ define_plugin!(FingerprintingPlugin, {
     }
 });
 
-fn make_var(name: &str, value: String) -> TxnVariable {
-    TxnVariable {
-        scope: VarScope::Session,
-        name: RString::from(name),
-        value: SpoeValue::String(RString::from(value)),
-    }
-}
-
 fn extract_client_hello(message: &SpoeMessage) -> ClientHelloData {
-    let mut proto = 0u16;
-    let mut ciphers: &[u8] = &[];
-    let mut extensions: &[u8] = &[];
-    let mut curves: &[u8] = &[];
-    let mut formats: &[u8] = &[];
-    let mut supported_versions: &[u8] = &[];
-    let mut sigalgs: &[u8] = &[];
-    let mut alpn: Option<String> = None;
-    let mut sni_present = false;
+    let proto = message.get_int("proto").unwrap_or(0) as u16;
+    let ciphers = message.get_binary("ciphers").unwrap_or(&[]);
+    let extensions = message.get_binary("extensions").unwrap_or(&[]);
+    let curves = message.get_binary("curves").unwrap_or(&[]);
+    let formats = message.get_binary("formats").unwrap_or(&[]);
+    let supported_versions = message.get_binary("supported_versions").unwrap_or(&[]);
+    let sigalgs = message.get_binary("sigalgs").unwrap_or(&[]);
 
-    for Tuple2(k, v) in message.args.iter() {
-        match k.as_str() {
-            "proto" => {
-                proto = match v {
-                    SpoeValue::Int32(n) => *n as u16,
-                    SpoeValue::Uint32(n) => *n as u16,
-                    SpoeValue::Int64(n) => *n as u16,
-                    SpoeValue::Uint64(n) => *n as u16,
-                    _ => 0,
-                }
-            }
-            "ciphers" => {
-                if let SpoeValue::Binary(b) = v {
-                    ciphers = b.as_slice();
-                }
-            }
-            "extensions" => {
-                if let SpoeValue::Binary(b) = v {
-                    extensions = b.as_slice();
-                }
-            }
-            "curves" => {
-                if let SpoeValue::Binary(b) = v {
-                    curves = b.as_slice();
-                }
-            }
-            "formats" => {
-                if let SpoeValue::Binary(b) = v {
-                    formats = b.as_slice();
-                }
-            }
-            "supported_versions" => {
-                if let SpoeValue::Binary(b) = v {
-                    supported_versions = b.as_slice();
-                }
-            }
-            "sigalgs" => {
-                if let SpoeValue::Binary(b) = v {
-                    sigalgs = b.as_slice();
-                }
-            }
-            "alpn" => {
-                if let SpoeValue::String(s) = v {
-                    let val = s.as_str().to_string();
-                    if !val.is_empty() {
-                        alpn = Some(val);
-                    }
-                }
-            }
-            "sni" => {
-                sni_present = match v {
-                    SpoeValue::Bool(b) => *b,
-                    SpoeValue::Int32(n) => *n != 0,
-                    SpoeValue::Uint32(n) => *n != 0,
-                    _ => false,
-                };
-            }
-            _ => {}
-        }
-    }
+    let alpn = message
+        .get_string("alpn")
+        .filter(|s| !s.is_empty())
+        .map(String::from);
+
+    let sni_present = match message.get("sni") {
+        Some(SpoeValue::Bool(b)) => *b,
+        Some(SpoeValue::Int32(n)) => *n != 0,
+        Some(SpoeValue::Uint32(n)) => *n != 0,
+        _ => false,
+    };
 
     ClientHelloData {
         protocol_version: proto,
