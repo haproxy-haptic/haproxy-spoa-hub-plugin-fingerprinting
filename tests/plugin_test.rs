@@ -1,5 +1,4 @@
-use abi_stable::std_types::{RHashMap, RString, RVec};
-use haproxy_spoa_hub_plugin_api::{ConfigValue, PluginContext};
+use haproxy_spoa_hub_plugin_api::{ConfigValue, PluginContext, RHashMap, RString, RVec};
 
 use fingerprinting_plugin::config::PluginConfig;
 
