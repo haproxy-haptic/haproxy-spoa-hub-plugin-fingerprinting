@@ -1,6 +1,6 @@
 [package]
 name = "fingerprinting-plugin"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.86"
 description = "TLS fingerprinting plugin for haproxy-spoa-hub (JA3/JA3N, JA4)"
@@ -10,9 +10,10 @@ license = "Apache-2.0"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-# Requires plugin-api 0.5.0+ (the hand-rolled #[repr(C)] vtable
-# migration). This plugin will not load on hubs older than v0.5.0.
-haproxy-spoa-hub-plugin-api = "0.5"
+# Requires plugin-api 0.6.0+ for the v2 vtable's set_metric_recorder.
+# Plugin still loads on v0.5.x hubs — v2 vtable field is appended,
+# old hubs read only what they know.
+haproxy-spoa-hub-plugin-api = "0.6"
 md-5 = "0.11"
 sha2 = "0.11"
 log = "0.4"
