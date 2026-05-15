@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use haproxy_spoa_hub_plugin_api::{
-    ProcessingResult, SpoeMessage, SpoeValue, TxnVariable, define_plugin,
+    MetricRecorder, ProcessingResult, SpoeMessage, SpoeValue, TxnVariable, define_plugin,
 };
 
 use crate::common::parse::parse_u16_be;
@@ -11,6 +11,10 @@ use crate::ja3::compute_ja3;
 use crate::ja4::compute_ja4;
 
 static CONFIG: OnceLock<PluginConfig> = OnceLock::new();
+
+/// Plugin-scoped metric recorder bound by the `metrics_static` macro arm.
+/// Silent no-op on pre-v0.6 hubs.
+static METRICS: MetricRecorder = MetricRecorder::new();
 
 #[derive(Debug)]
 struct FingerprintingPlugin;
@@ -48,13 +52,27 @@ define_plugin!(FingerprintingPlugin, {
         let mut vars = Vec::with_capacity(4);
 
         // JA3/JA3N
+        let started_ja3 = std::time::Instant::now();
         let (hash, raw) = compute_ja3(&data, config.sort_extensions, &config.exclude_extensions);
+        METRICS.histogram(
+            "compute_duration_seconds",
+            &[("kind", "ja3")],
+            started_ja3.elapsed().as_secs_f64(),
+        );
+        METRICS.counter("fingerprints_computed_total", &[("kind", "ja3")], 1);
         vars.push(TxnVariable::session("hash", SpoeValue::String(hash.into())));
         vars.push(TxnVariable::session("raw", SpoeValue::String(raw.into())));
 
         // JA4
         if config.ja4 {
+            let started_ja4 = std::time::Instant::now();
             let (ja4, ja4_r) = compute_ja4(&data);
+            METRICS.histogram(
+                "compute_duration_seconds",
+                &[("kind", "ja4")],
+                started_ja4.elapsed().as_secs_f64(),
+            );
+            METRICS.counter("fingerprints_computed_total", &[("kind", "ja4")], 1);
             vars.push(TxnVariable::session("ja4", SpoeValue::String(ja4.into())));
             vars.push(TxnVariable::session(
                 "ja4_r",
@@ -68,6 +86,8 @@ define_plugin!(FingerprintingPlugin, {
     fn config_schema(&self) -> Option<&str> {
         Some(PluginConfig::config_schema())
     }
+
+    metrics_static = METRICS;
 });
 
 fn extract_client_hello(message: &SpoeMessage) -> ClientHelloData {

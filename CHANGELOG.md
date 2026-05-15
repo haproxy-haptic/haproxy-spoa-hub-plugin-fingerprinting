@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-15
+
+### Added
+
+- **Prometheus metrics** via the `haproxy-spoa-hub` v0.6.0 plugin-API v2 vtable. Surfaced through the hub's `/metrics` endpoint under the `plugin_fingerprinting_` prefix.
+
+  | metric                        | kind      | labels       |
+  |-------------------------------|-----------|--------------|
+  | `fingerprints_computed_total` | counter   | `kind`       |
+  | `compute_duration_seconds`    | histogram | `kind`       |
+
+  `kind` ∈ `{ja3, ja4}`. JA4 is only emitted when `params.ja4 = true`. Separate observations per algorithm so operators can see per-algorithm latency tails.
+
+### Changed
+
+- Plugin-API dep `^0.5` → `^0.6` to pick up `MetricRecorder` and the `metrics_static` macro arm. Vtable change is append-only — this plugin's v0.3.0 .so still loads on v0.5.x hubs (metrics silent there).
+
 ## [0.2.0] - 2026-05-04
 
 ### Changed
