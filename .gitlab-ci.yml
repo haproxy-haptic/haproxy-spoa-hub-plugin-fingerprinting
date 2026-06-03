@@ -39,6 +39,7 @@ variables:
         - Cargo.lock
         - rustfmt.toml
         - "tests/**/*"
+        - "benchmarks/**/*"
         - .gitlab-ci.yml
 
 # =============================================================================
