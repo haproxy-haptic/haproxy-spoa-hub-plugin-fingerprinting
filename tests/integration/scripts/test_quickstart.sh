@@ -56,7 +56,9 @@ if [ ${#HASH} -ne 32 ]; then
     exit 1
 fi
 
-if ! echo "$HASH" | grep -qE '^[0-9a-f]{32}$'; then
+# Match in-shell: with `| grep -q`, grep exits on first match, the
+# producer takes SIGPIPE, and pipefail reports 141 -- a match read as a miss.
+if ! [[ "$HASH" =~ ^[0-9a-f]{32}$ ]]; then
     echo "FAIL: hash is not valid hex: $HASH"
     exit 1
 fi
@@ -65,7 +67,7 @@ fi
 sleep 1
 HUB_LOGS=$(docker compose -p "$PROJECT" -f "$COMPOSE_DIR/docker-compose.yml" logs hub 2>&1)
 
-if ! echo "$HUB_LOGS" | grep -q "plugin loaded"; then
+if [[ "$HUB_LOGS" != *"plugin loaded"* ]]; then
     echo "FAIL: hub logs missing 'plugin loaded'"
     echo "$HUB_LOGS"
     exit 1
