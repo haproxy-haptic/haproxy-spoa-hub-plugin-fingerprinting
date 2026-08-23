@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 # Requires plugin-api 0.6.0+ for the v2 vtable's set_metric_recorder.
 # Plugin still loads on v0.5.x hubs — v2 vtable field is appended,
 # old hubs read only what they know.
-haproxy-spoa-hub-plugin-api = "0.7"
+haproxy-spoa-hub-plugin-api = "0.8"
 md-5 = "0.11"
 sha2 = "0.11"
 log = "0.4"
