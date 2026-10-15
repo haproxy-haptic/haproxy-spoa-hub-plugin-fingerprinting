@@ -1,8 +1,8 @@
 # HAProxy SPOA Hub — Fingerprinting Plugin
 
-[![Build Status](https://gitlab.com/haproxy-haptic/haproxy-spoa-hub-plugin-fingerprinting/badges/master/pipeline.svg)](https://gitlab.com/haproxy-haptic/haproxy-spoa-hub-plugin-fingerprinting/-/pipelines)
+[![CI](https://github.com/haproxy-haptic/haproxy-spoa-hub-plugin-fingerprinting/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/haproxy-haptic/haproxy-spoa-hub-plugin-fingerprinting/actions/workflows/ci.yml)
 
-A [haproxy-spoa-hub](https://gitlab.com/haproxy-haptic/haproxy-spoa-hub) plugin that computes TLS fingerprints from ClientHello data. Supports JA3, JA3N, and JA4.
+A [haproxy-spoa-hub](https://github.com/haproxy-haptic/haproxy-spoa-hub) plugin that computes TLS fingerprints from ClientHello data. Supports JA3, JA3N, and JA4.
 
 ## Overview
 
@@ -20,7 +20,7 @@ The plugin receives pre-parsed ClientHello fields from HAProxy via the SPOE prot
 
 ### Prerequisites
 
-- [haproxy-spoa-hub](https://gitlab.com/haproxy-haptic/haproxy-spoa-hub) built and running
+- [haproxy-spoa-hub](https://github.com/haproxy-haptic/haproxy-spoa-hub) built and running
 - HAProxy >= 2.8 with `USE_OPENSSL=1`
 - Rust toolchain (>= 1.86) for building the plugin
 
@@ -32,7 +32,7 @@ cargo build --release
 
 The output is `target/release/libfingerprinting_plugin.so`. Copy it to the hub's plugin directory.
 
-Pre-built binaries for all supported architectures are available on the [releases page](https://gitlab.com/haproxy-haptic/haproxy-spoa-hub-plugin-fingerprinting/-/releases).
+Pre-built binaries for all supported architectures are available on the [releases page](https://github.com/haproxy-haptic/haproxy-spoa-hub-plugin-fingerprinting/releases).
 
 ### Supported Architectures
 
@@ -227,7 +227,7 @@ cd benchmarks
 CONCURRENCY_LEVELS="100 1000" ./run-benchmarks.sh
 ```
 
-Requires: Docker, kind, kubectl, and a local checkout of [haproxy-spoa-hub](https://gitlab.com/haproxy-haptic/haproxy-spoa-hub) as a sibling directory.
+Requires: Docker, kind, kubectl, and a local checkout of [haproxy-spoa-hub](https://github.com/haproxy-haptic/haproxy-spoa-hub) as a sibling directory.
 
 ### Project Structure
 
