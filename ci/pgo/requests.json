@@ -1,0 +1,25 @@
+[
+  {
+    "message": "get-fingerprint",
+    "args": {
+      "proto": 771,
+      "ciphers": {
+        "hex": "130113021303c02f"
+      },
+      "extensions": {
+        "hex": "00000010002b"
+      },
+      "curves": {
+        "hex": "001d0017"
+      },
+      "formats": {
+        "hex": "00"
+      },
+      "alpn": "h2",
+      "sni": true
+    },
+    "expect": {
+      "fingerprinting.raw": "771,4865-4866-4867-49199,0-16-43,29-23,0"
+    }
+  }
+]
